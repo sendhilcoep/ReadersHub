@@ -5,6 +5,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class LibraryService {
@@ -16,7 +18,7 @@ public class LibraryService {
 		this.libRepo = libRepo;
 	}
 	
-	public boolean issueBook(User user, Book book) throws EmptyLibraryException {
+	public boolean issueBook(final User user, final Book book) throws EmptyLibraryException {
 		boolean bookIssued = libRepo.issueBook(book);
 		if(bookIssued) {
 			IssueRequest request = new IssueRequest(book, new Date());
@@ -26,7 +28,7 @@ public class LibraryService {
 		
 	}
 
-	public boolean issueBooks(User user, ArrayList<Book> requestList) throws MembershipException, EmptyLibraryException {
+	public boolean issueBooks(final User user, final ArrayList<Book> requestList) throws MembershipException, EmptyLibraryException {
 		if(!(requestedBooksWithinMembershipLimit(user, requestList.size())
 				&&requestedBooksWithinLanguageLimit(requestList)
 				&&requestedBooksWithinCategoryNLanguageLimit(requestList)))
@@ -35,6 +37,7 @@ public class LibraryService {
 		for(Book book : requestList) {
 			if(!libRepo.canIssue(book))
 				return false;
+			issueBook(user,book);
 			libRepo.issueBook(book);
 		}
 		return true;
@@ -43,27 +46,15 @@ public class LibraryService {
 
 	private boolean requestedBooksWithinCategoryNLanguageLimit(ArrayList<Book> requestList) {
 		Map<Language,List<Book>> newMap = requestList.stream().collect(Collectors.groupingBy(Book::getLanguage));
-		for (Map.Entry<Language, List<Book>> entry : newMap.entrySet()) {
-			if(entry.getValue().size()>3)
-				return false;
-		}
-		for (Map.Entry<Language, List<Book>> entry : newMap.entrySet()) {
-			Map<Category,List<Book>> categoryMap = entry.getValue().stream().collect(Collectors.groupingBy(Book::getCategory));	
-			for (Map.Entry<Category, List<Book>> category : categoryMap.entrySet()) {
-				if(category.getValue().size()>3)
-					return false;
-			}
-		}
-		return true;
+		Predicate<? super Entry<Language, List<Book>>> moreThan3BooksOfSameLanguage = e->e.getValue().size()>3;
+		Predicate<? super Entry<Category, List<Book>>> moreThan3BooksOfSameCategory = f->f.getValue().size()>3;
+		return newMap.entrySet().stream().filter(moreThan3BooksOfSameLanguage)
+				.map(e->e.getValue().stream().collect(Collectors.groupingBy(Book::getCategory)))
+				.sequential().noneMatch(e->e.entrySet().stream().anyMatch(moreThan3BooksOfSameCategory));
 	}
 
 	private boolean requestedBooksWithinLanguageLimit(ArrayList<Book> requestList) {
-		Map<Language,List<Book>> newMap = requestList.stream().collect(Collectors.groupingBy(Book::getLanguage));
-		for (Map.Entry<Language, List<Book>> entry : newMap.entrySet()) {
-			if(entry.getValue().size()>4)
-				return false;
-		}
-		return true;
+		return requestList.stream().collect(Collectors.groupingBy(Book::getLanguage)).values().stream().noneMatch(e->e.size()>4);
 	}
 
 	private boolean requestedBooksWithinMembershipLimit(User user, int requestSize) {
@@ -74,6 +65,10 @@ public class LibraryService {
 		libRepo.returnBook(book);
 		issueRepo.returnBook(book,user);
 		return 0;
+	}
+
+	public List<Book> getBooksIssuedBy(final User user) {
+		return issueRepo.getBooksIssuedBy(user);
 	}
 
 }

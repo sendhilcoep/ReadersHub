@@ -13,5 +13,16 @@ public class User {
 	public Membership getMembership() {
 		return membership;
 	}
+	
+@Override
+public boolean equals(Object obj) {
+	User otherUser = (User)obj;
+	return this.name.equals(otherUser.name)&&this.membership.equals(otherUser.membership);
+//	return super.equals(obj);
+}
+@Override
+public int hashCode() {
+	return super.hashCode();
+}
 
 }

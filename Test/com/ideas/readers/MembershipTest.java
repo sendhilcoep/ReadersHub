@@ -63,46 +63,28 @@ public class MembershipTest {
 			put(XYZ, 5);
 		}};
 		LibraryRepo repo = new LibraryRepo(books);
-		LibraryService libraryService = new LibraryService(repo);
 		LibraryService service = new LibraryService(repo);
 		User user = new User("SomeUser", Membership.IVORY);
 		service.issueBooks(user, new ArrayList<Book>(Arrays.asList(LOTR, MEWT, ABC, XYZ)));
 		fail("More books than allowed requested");
 	}
-	
-	@Test(expected=MembershipException.class)
-	public void userCannotRequest5BooksOfSameLanguage() throws MembershipException, EmptyLibraryException {
-		Map<Book, Integer> books = new HashMap<Book, Integer>(){{
-			put(LOTR, 1);
-			put(MEWT, 2);
-			put(ABC, 3);
-			put(XYZ, 5);
-		}};
-		LibraryRepo repo = new LibraryRepo(books);
-		LibraryService libraryService = new LibraryService(repo);
-		LibraryService service = new LibraryService(repo);
-		User user = new User("SomeUser", Membership.PLATINUM);
-		service.issueBooks(user, new ArrayList<Book>(Arrays.asList(XYZ, QWERTY, ASDF, ZXCVBN, MKLP)));
-		fail("Not expected to reach here");
-	}
-	
-	@Test(expected=MembershipException.class)
-	public void userCannotRequest4BooksOfSameCatrgoryAndLanguage() throws MembershipException, EmptyLibraryException {
-		Map<Book, Integer> books = new HashMap<Book, Integer>(){{
-			put(LOTR, 1);
-			put(MEWT, 2);
-			put(ABC, 3);
-			put(XYZ, 5);
-		}};
-		LibraryRepo repo = new LibraryRepo(books);
-		LibraryService libraryService = new LibraryService(repo);
-		LibraryService service = new LibraryService(repo);
-		User user = new User("SomeUser", Membership.PLATINUM);
-		service.issueBooks(user, new ArrayList<Book>(Arrays.asList(XYZ, QWERTY, ASDF, ZXCVBN, MKLP)));
-		fail("Not expected to reach here");
-	}
-	
 	@Ignore
+	@Test
+	public void shouldReturnBooksIssuedByAUser() throws Exception {
+		Map<Book, Integer> books = new HashMap<Book, Integer>(){{
+			put(LOTR, 1);
+			put(MEWT, 2);
+			put(ABC, 3);
+			put(XYZ, 5);
+		}};
+		LibraryRepo repo = new LibraryRepo(books);
+		LibraryService service = new LibraryService(repo);
+		final User user = new User("SomeUser", Membership.PLATINUM);
+		service.issueBook(user, LOTR);
+		assertEquals(1,service.getBooksIssuedBy(user));
+	}
+	@Ignore
+	@Test
 	public void booksReturnedWithinTimeLimitIncurNoExtraCharges() throws EmptyLibraryException {
 		Map<Book, Integer> books = new HashMap<Book, Integer>(){{
 			put(LOTR, 1);
@@ -111,9 +93,8 @@ public class MembershipTest {
 			put(XYZ, 5);
 		}};
 		LibraryRepo repo = new LibraryRepo(books);
-		LibraryService libraryService = new LibraryService(repo);
 		LibraryService service = new LibraryService(repo);
-		User user = new User("SomeUser", Membership.PLATINUM);
+		final User user = new User("SomeUser", Membership.PLATINUM);
 		service.issueBook(user, LOTR);
 		double charges = service.returnBook(user,LOTR);
 		assertEquals(0,charges,0.0);
