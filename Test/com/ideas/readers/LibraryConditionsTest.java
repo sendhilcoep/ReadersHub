@@ -22,10 +22,16 @@ public class LibraryConditionsTest {
 	private Book ZXCVBN = new Book("ZXCVBN", Language.FRENCH, Category.COOKING);
 	private Book MKLP = new Book("MKLP", Language.FRENCH, Category.COOKING);
 	private Map<Book, Integer> books;
+	private LibraryRepo repo;
+	private LibraryService service;
+	private User user;
 
 	@Before
 	public void init(){
-		books=initBooksList();	
+		books=initBooksList();
+		repo = new LibraryRepo(books);
+		service = new LibraryService(repo);
+		user = new User("SomeUser", Membership.PLATINUM);
 	}
 	@After
 	public void destroy(){
@@ -45,33 +51,21 @@ public class LibraryConditionsTest {
 	
 	@Test(expected=MembershipException.class)
 	public void userCannotRequest5BooksOfSameLanguage() throws MembershipException, EmptyLibraryException {
-		LibraryRepo repo = new LibraryRepo(books);
-		LibraryService service = new LibraryService(repo);
-		User user = new User("SomeUser", Membership.PLATINUM);
 		service.issueBooks(user, new ArrayList<Book>(Arrays.asList(XYZ, QWERTY, ASDF, ZXCVBN, MKLP)));
 		fail("Not expected to reach here");
 	}
 	
 	@Test(expected=MembershipException.class)
 	public void userCannotRequest4BooksOfSameCatrgoryAndLanguage() throws MembershipException, EmptyLibraryException {
-		LibraryRepo repo = new LibraryRepo(books);
-		LibraryService service = new LibraryService(repo);
-		User user = new User("SomeUser", Membership.PLATINUM);
 		service.issueBooks(user, new ArrayList<Book>(Arrays.asList(XYZ, QWERTY, ASDF, ZXCVBN, MKLP)));
 		fail("Not expected to reach here");
 	}
 	@Test
 	public void userCanRequest3BooksOfSameCategoryDifferentLanguages() throws Exception {
-		LibraryRepo repo = new LibraryRepo(books);
-		LibraryService service = new LibraryService(repo);
-		User user = new User("SomeUser", Membership.PLATINUM);
 		assertTrue(service.issueBooks(user, new ArrayList<Book>(Arrays.asList(LOTR,ABC,ASDF,XYZ))));
 	}
 	@Test
 	public void userCanRequest3BooksOfSameLanguageDifferentCategories() throws Exception {
-		LibraryRepo repo = new LibraryRepo(books);
-		LibraryService service = new LibraryService(repo);
-		User user = new User("SomeUser", Membership.PLATINUM);
 		assertTrue(service.issueBooks(user, new ArrayList<Book>(Arrays.asList(LOTR,QWERTY,ASDF,XYZ))));
 	}
 }
