@@ -1,5 +1,7 @@
 package com.ideas.readers;
 
+import java.util.Objects;
+
 public class Book {
 
 	private String name;
@@ -20,8 +22,19 @@ public class Book {
 	}
 	@Override
 	public boolean equals(Object object){
+		if(this==object)return true;
+		if(object==null)return false;
+		if(getClass() != object.getClass())return false;
 		Book otherbook = (Book) object;
 		return (this.name.equals(otherbook.name) && this.language.equals(otherbook.language));
+	}
+	@Override
+	public int hashCode() {
+		 int hash = 7;
+		 	        hash = 83 * hash + Objects.hashCode(this.name);
+		 	        hash = 83 * hash + Objects.hashCode(this.language);
+		 	        hash = 83 * hash + Objects.hashCode(this.category);
+		 	        return hash;
 	}
 	
 }

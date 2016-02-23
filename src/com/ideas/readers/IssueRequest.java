@@ -10,7 +10,6 @@ public class IssueRequest {
 	public IssueRequest(Book book, Date issueDate) {
 		this.book = book;
 		this.issueDate = issueDate;
-		// TODO Auto-generated constructor stub
 	}
 
 	public Object getBook() {
