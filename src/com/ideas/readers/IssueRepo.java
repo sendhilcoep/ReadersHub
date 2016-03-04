@@ -1,5 +1,6 @@
 package com.ideas.readers;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -19,25 +20,44 @@ public class IssueRepo {
 
 	public void populate(final User user, final IssueRequest request) {
 		if (!requests.containsKey(user)) {
-			requests.put(user, Arrays.asList(request));
+			List newList = new ArrayList();
+			newList.add(request);
+			requests.put(user, newList);
 			return;
 		}
 		List<IssueRequest> list = requests.get(user);
-		if (list == null)
-			list = new ArrayList<IssueRequest>();
-		list.add(request);
+		if (list == null){
+			requests.put(user,  Arrays.asList(request));
+		}
+		else{
+			list.add(request);
+		}
 	}
 
-	public Date returnBook(final Book book, final User user) {
+	public LocalDateTime returnBook(final Book book, final User user) {
+		List<IssueRequest> issues = requests.get(user);
+		IssueRequest issue = issues.stream().filter(b->b.getBook().equals(book)).findAny().orElse(null);
+		if(issue!=null){
+			issues.remove(issue);
+			return issue.getIssueDate();
+		}
+		return null;
+	}
+	public LocalDateTime returnBookIssueDate(final Book book, final User user) {
 		List<IssueRequest> issues = requests.get(user);
 		return issues.stream().filter(b->b.getBook().equals(book)).map(b->b.getIssueDate()).findAny().orElse(null);
 	}
-
 	public List<Book> getBooksIssuedBy(final User user) {
 		List<IssueRequest> issueRequests = requests.get(user);
 		List<Book> books = issueRequests.stream().map((issueRequest) -> ((Book) issueRequest.getBook()))
 				.collect(Collectors.toList());
 		return books;
+	}
+
+	public int getNoOfBooksIssuedBy(User user) {
+		List<IssueRequest> issueRequests = requests.get(user);
+		if(null != issueRequests)return issueRequests.size();
+		return 0;
 	}
 
 }

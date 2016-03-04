@@ -1,5 +1,6 @@
 package com.ideas.readers;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -10,6 +11,7 @@ import java.util.Map;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class LibraryConditionsTest {
@@ -48,6 +50,9 @@ public class LibraryConditionsTest {
 			put(XYZ, 5);
 			put(ASDF,6);
 			put(QWERTY, 3);
+			put(ASDF,2);
+			put(ZXCVBN,2);
+			put(MKLP, 2);
 		}};
 		return books;
 	}
@@ -61,6 +66,14 @@ public class LibraryConditionsTest {
 	@Test(expected=MembershipException.class)
 	public void userCannotRequest4BooksOfSameCatrgoryAndLanguage() throws MembershipException, EmptyLibraryException {
 		service.issueBooks(user, new ArrayList<Book>(Arrays.asList(XYZ, QWERTY, ASDF, ZXCVBN, MKLP)));
+		fail("Not expected to reach here");
+	}
+//	@Ignore
+	@Test(expected=MembershipException.class)
+	public void userCannotRequest4BooksOfSameCategoryAndLanguageAcrossMultipleTransactions() throws MembershipException, EmptyLibraryException {
+		User testUser = new User("SomeUser1", Membership.IVORY);
+		service.issueBooks(testUser, new ArrayList<Book>(Arrays.asList(XYZ, ABC)));
+		service.issueBooks(testUser, new ArrayList<Book>(Arrays.asList(QWERTY, LOTR, MEWT)));
 		fail("Not expected to reach here");
 	}
 	@Test

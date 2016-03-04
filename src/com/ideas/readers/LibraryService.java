@@ -1,5 +1,7 @@
 package com.ideas.readers;
 
+import java.time.LocalDateTime;
+import java.time.Period;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -21,20 +23,19 @@ public class LibraryService {
 	public boolean issueBook(final User user, final Book book) throws EmptyLibraryException {
 		boolean bookIssued = libRepo.issueBook(book);
 		if(bookIssued) {
-			IssueRequest request = new IssueRequest(book, new Date());
+			IssueRequest request = new IssueRequest(book, LocalDateTime.now());
 			issueRepo.populate(user,request);
 		}
 		return bookIssued;
 		
 	}
 
-	public boolean issueBooks(final User user, final ArrayList<Book> requestList) throws MembershipException, EmptyLibraryException {
-		if(!(requestedBooksWithinMembershipLimit(user, requestList.size())
-				&&requestedBooksWithinLanguageLimit(requestList)
-				&&requestedBooksWithinCategoryNLanguageLimit(requestList)))
+	public boolean issueBooks(final User user, final List<Book> list) throws MembershipException, EmptyLibraryException {
+		if(!(requestedBooksWithinMembershipLimit(user, list.size())&&requestedBooksWithinLanguageLimit(list)
+				&&requestedBooksWithinCategoryNLanguageLimit(list)))
 			throw new MembershipException();
 		
-		for(Book book : requestList) {
+		for(Book book : list) {
 			if(!libRepo.canIssue(book))
 				return false;
 			issueBook(user,book);
@@ -44,8 +45,8 @@ public class LibraryService {
 			
 	}
 
-	private boolean requestedBooksWithinCategoryNLanguageLimit(ArrayList<Book> requestList) {
-		Map<Language,List<Book>> newMap = requestList.stream().collect(Collectors.groupingBy(Book::getLanguage));
+	private boolean requestedBooksWithinCategoryNLanguageLimit(List<Book> list) {
+		Map<Language,List<Book>> newMap = list.stream().collect(Collectors.groupingBy(Book::getLanguage));
 		Predicate<? super Entry<Language, List<Book>>> moreThan3BooksOfSameLanguage = e->e.getValue().size()>3;
 		Predicate<? super Entry<Category, List<Book>>> moreThan3BooksOfSameCategory = f->f.getValue().size()>3;
 		return newMap.entrySet().stream().filter(moreThan3BooksOfSameLanguage)
@@ -53,18 +54,20 @@ public class LibraryService {
 				.sequential().noneMatch(e->e.entrySet().stream().anyMatch(moreThan3BooksOfSameCategory));
 	}
 
-	private boolean requestedBooksWithinLanguageLimit(ArrayList<Book> requestList) {
-		return requestList.stream().collect(Collectors.groupingBy(Book::getLanguage)).values().stream().noneMatch(e->e.size()>4);
+	public boolean requestedBooksWithinLanguageLimit(List<Book> list) {
+		return list.stream().collect(Collectors.groupingBy(Book::getLanguage)).values().stream().filter(n->n.size()>0).noneMatch(e->e.size()>4);
 	}
 
 	private boolean requestedBooksWithinMembershipLimit(User user, int requestSize) {
-		return user.getMembership().getMaxBooksHeld() > requestSize;
+		return user.getMembership().getMaxBooksHeld()+1 >= (requestSize+issueRepo.getNoOfBooksIssuedBy(user));
 	}
 
-	public double returnBook(User user, Book book) {
+	public double returnBook(User user, Book book, LocalDateTime returnTime) {
 		libRepo.returnBook(book);
-		issueRepo.returnBook(book,user);
-		return 0;
+		Boolean isExtraBook = user.getMembership().hasExtraBook(issueRepo.getBooksIssuedBy(user).size());
+		LocalDateTime issueDate = issueRepo.returnBook(book,user);
+		Period periodBetweenIssueAndReturn = Period.between(issueDate.toLocalDate(), returnTime.toLocalDate());
+		return(user.getMembership().getChargesForReturn(periodBetweenIssueAndReturn.getDays(),isExtraBook));
 	}
 
 	public List<Book> getBooksIssuedBy(final User user) {

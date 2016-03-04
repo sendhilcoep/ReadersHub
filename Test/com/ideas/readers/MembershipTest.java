@@ -2,6 +2,7 @@ package com.ideas.readers;
 
 import static org.junit.Assert.*;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -65,7 +66,23 @@ public class MembershipTest {
 		LibraryRepo repo = new LibraryRepo(books);
 		LibraryService service = new LibraryService(repo);
 		User user = new User("SomeUser", Membership.IVORY);
-		service.issueBooks(user, new ArrayList<Book>(Arrays.asList(LOTR, MEWT, ABC, XYZ)));
+		service.issueBooks(user, new ArrayList<Book>(Arrays.asList(LOTR, MEWT, ABC, XYZ,ABC)));
+		fail("More books than allowed requested");
+	}
+	
+	@Test(expected=MembershipException.class)
+	public void userCannotRequestMoreBooksThanMembershipLimitAcrossMultipleTransactions() throws MembershipException, EmptyLibraryException {
+		Map<Book, Integer> books = new HashMap<Book, Integer>(){{
+			put(LOTR, 1);
+			put(MEWT, 2);
+			put(ABC, 3);
+			put(XYZ, 5);
+		}};
+		LibraryRepo repo = new LibraryRepo(books);
+		LibraryService service = new LibraryService(repo);
+		User user = new User("SomeUser", Membership.IVORY);
+		service.issueBooks(user, new ArrayList<Book>(Arrays.asList(LOTR, MEWT, ABC,ABC)));
+		service.issueBooks(user, new ArrayList<Book>(Arrays.asList(XYZ)));
 		fail("More books than allowed requested");
 	}
 	@Test
@@ -75,15 +92,21 @@ public class MembershipTest {
 			put(MEWT, 2);
 			put(ABC, 3);
 			put(XYZ, 5);
-		}};
+		}};//Intstream
 		LibraryRepo repo = new LibraryRepo(books);
 		LibraryService service = new LibraryService(repo);
 		final User user = new User("SomeUser", Membership.PLATINUM);
 		service.issueBook(user, LOTR);
 		assertEquals(1,service.getBooksIssuedBy(user).size());
+		service.issueBook(user,MEWT);
+		assertEquals(2,service.getBooksIssuedBy(user).size());
+		service.returnBook(user, LOTR, LocalDateTime.now().plusDays(1));
+		assertEquals(1, service.getBooksIssuedBy(user).size());
+		//print
 	}
+	
 	@Test
-	public void booksReturnedWithinTimeLimitIncurNoExtraCharges() throws EmptyLibraryException {
+	public void shouldIssueExtraBook() throws Exception {
 		Map<Book, Integer> books = new HashMap<Book, Integer>(){{
 			put(LOTR, 1);
 			put(MEWT, 2);
@@ -92,10 +115,8 @@ public class MembershipTest {
 		}};
 		LibraryRepo repo = new LibraryRepo(books);
 		LibraryService service = new LibraryService(repo);
-		final User user = new User("SomeUser", Membership.PLATINUM);
-		service.issueBook(user, LOTR);
-		double charges = service.returnBook(user,LOTR);
-		assertEquals(0,charges,0.0);
+		final User user = new User("SomeUser", Membership.IVORY);
+		assertTrue(service.issueBooks(user, Arrays.asList(LOTR,MEWT,ABC,XYZ)));
 	}
 	
 }
