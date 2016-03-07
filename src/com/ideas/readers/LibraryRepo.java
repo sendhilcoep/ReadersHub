@@ -3,6 +3,8 @@ package com.ideas.readers;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.ideas.readers.exceptions.EmptyLibraryException;
+
 public class LibraryRepo {
 	private Map<Book,Integer> books = new HashMap<>();
 	public boolean issueBook(Book requestedBook) throws EmptyLibraryException {

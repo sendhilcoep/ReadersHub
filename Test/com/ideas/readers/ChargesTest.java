@@ -1,16 +1,20 @@
 package com.ideas.readers;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.print.attribute.standard.DateTimeAtCompleted;
 
 import org.junit.Test;
+
+import com.ideas.readers.exceptions.EmptyLibraryException;
+import com.ideas.readers.exceptions.MembershipException;
 
 public class ChargesTest {
 	private Book LOTR = new Book("LORD_OF_THE_RINGS",Language.ENGLISH,Category.HISTORY);
@@ -34,7 +38,8 @@ public class ChargesTest {
 		LibraryService service = new LibraryService(repo);
 		final User user = new User("SomeUser", Membership.PLATINUM);
 		service.issueBook(user, LOTR);
-		double charges = service.returnBook(user,LOTR,LocalDateTime.now());
+		Receipt receipt= service.returnBook(user,LOTR,LocalDateTime.now());
+		double charges = receipt.getTotalCharge();
 		assertEquals(0,charges,0.0);
 	}
 	
@@ -50,7 +55,8 @@ public class ChargesTest {
 		LibraryService service = new LibraryService(repo);
 		final User user = new User("SomeUser", Membership.PLATINUM);
 		service.issueBook(user, LOTR);
-		double charges = service.returnBook(user,LOTR,LocalDateTime.now().plusDays(30));
+		Receipt receipt= service.returnBook(user,LOTR,LocalDateTime.now().plusDays(30));
+		double charges = receipt.getTotalCharge();
 		assertEquals(500.0,charges,0.0);
 	}
 	
@@ -66,7 +72,41 @@ public class ChargesTest {
 		LibraryService service = new LibraryService(repo);
 		final User user = new User("SomeUser", Membership.IVORY);
 		service.issueBooks(user, Arrays.asList(LOTR,ABC,MEWT,XYZ));
-		double charges = service.returnBook(user,LOTR,LocalDateTime.now().plusDays(2));
+		Receipt receipt= service.returnBook(user,LOTR,LocalDateTime.now().plusDays(2));
+		double charges = receipt.getTotalCharge();
 		assertEquals(50.0,charges,0.0);
+	}
+	
+	@Test
+	public void shouldPrintReciept() throws Exception {
+		Map<Book, Integer> books = new HashMap<Book, Integer>(){{
+			put(LOTR, 1);
+			put(MEWT, 2);
+			put(ABC, 3);
+			put(XYZ, 5);
+		}};
+		LibraryRepo repo = new LibraryRepo(books);
+		LibraryService service = new LibraryService(repo);
+		final User user = new User("SomeUser", Membership.IVORY);
+		service.issueBooks(user, Arrays.asList(LOTR,ABC,MEWT,XYZ));
+		Receipt receipt = service.returnBook(user,LOTR,LocalDateTime.now().plusDays(2));
+		assertEquals(50.0,receipt.getTotalCharge(),0.0);
+	}
+	
+	@Test
+	public void shouldPrintRecieptForMultipleBooks() throws Exception {
+		Map<Book, Integer> books = new HashMap<Book, Integer>(){{
+			put(LOTR, 1);
+			put(MEWT, 2);
+			put(ABC, 3);
+			put(XYZ, 5);
+		}};
+		LibraryRepo repo = new LibraryRepo(books);
+		LibraryService service = new LibraryService(repo);
+		final User user = new User("SomeUser", Membership.IVORY);
+		service.issueBooks(user, Arrays.asList(LOTR,ABC,MEWT,XYZ));
+		List returnedBooks = Arrays.asList(LOTR,ABC);
+		Receipt receipt = service.returnBooks(user,returnedBooks,LocalDateTime.now().plusDays(2));
+		assertEquals(50.0,receipt.getTotalCharge(),0.0);
 	}
 }

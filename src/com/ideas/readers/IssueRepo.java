@@ -26,27 +26,28 @@ public class IssueRepo {
 			return;
 		}
 		List<IssueRequest> list = requests.get(user);
-		if (list == null){
-			requests.put(user,  Arrays.asList(request));
-		}
-		else{
+		if (list == null) {
+			requests.put(user, Arrays.asList(request));
+		} else {
 			list.add(request);
 		}
 	}
 
-	public LocalDateTime returnBook(final Book book, final User user) {
+	public IssueRequest returnBook(final Book book, final User user) {
 		List<IssueRequest> issues = requests.get(user);
-		IssueRequest issue = issues.stream().filter(b->b.getBook().equals(book)).findAny().orElse(null);
-		if(issue!=null){
+		IssueRequest issue = issues.stream().filter(b -> b.getBook().equals(book)).findAny().orElse(null);
+		if (issue != null) {
 			issues.remove(issue);
-			return issue.getIssueDate();
+			return issue;
 		}
 		return null;
 	}
+
 	public LocalDateTime returnBookIssueDate(final Book book, final User user) {
 		List<IssueRequest> issues = requests.get(user);
-		return issues.stream().filter(b->b.getBook().equals(book)).map(b->b.getIssueDate()).findAny().orElse(null);
+		return issues.stream().filter(b -> b.getBook().equals(book)).map(b -> b.getIssueDate()).findAny().orElse(null);
 	}
+
 	public List<Book> getBooksIssuedBy(final User user) {
 		List<IssueRequest> issueRequests = requests.get(user);
 		List<Book> books = issueRequests.stream().map((issueRequest) -> ((Book) issueRequest.getBook()))
@@ -56,7 +57,8 @@ public class IssueRepo {
 
 	public int getNoOfBooksIssuedBy(User user) {
 		List<IssueRequest> issueRequests = requests.get(user);
-		if(null != issueRequests)return issueRequests.size();
+		if (null != issueRequests)
+			return issueRequests.size();
 		return 0;
 	}
 

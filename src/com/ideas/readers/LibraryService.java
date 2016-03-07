@@ -11,6 +11,9 @@ import java.util.Map.Entry;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import com.ideas.readers.exceptions.EmptyLibraryException;
+import com.ideas.readers.exceptions.MembershipException;
+
 public class LibraryService {
 
 	LibraryRepo libRepo;
@@ -62,16 +65,40 @@ public class LibraryService {
 		return user.getMembership().getMaxBooksHeld()+1 >= (requestSize+issueRepo.getNoOfBooksIssuedBy(user));
 	}
 
-	public double returnBook(User user, Book book, LocalDateTime returnTime) {
+	public Receipt returnBook(User user, Book book, LocalDateTime returnTime) {
 		libRepo.returnBook(book);
 		Boolean isExtraBook = user.getMembership().hasExtraBook(issueRepo.getBooksIssuedBy(user).size());
-		LocalDateTime issueDate = issueRepo.returnBook(book,user);
+		IssueRequest issue = issueRepo.returnBook(book,user);
+		double charges = getChargesForReturn(user, returnTime, isExtraBook, issue);
+		Receipt receipt = new Receipt(user,issue,charges);
+		return receipt;
+	}
+
+	private double getChargesForReturn(User user, LocalDateTime returnTime, Boolean isExtraBook, IssueRequest issue) {
+		LocalDateTime issueDate = issue.getIssueDate(); 
 		Period periodBetweenIssueAndReturn = Period.between(issueDate.toLocalDate(), returnTime.toLocalDate());
-		return(user.getMembership().getChargesForReturn(periodBetweenIssueAndReturn.getDays(),isExtraBook));
+		double charges = user.getMembership().getChargesForReturn(periodBetweenIssueAndReturn.getDays(),isExtraBook);
+		return charges;
 	}
 
 	public List<Book> getBooksIssuedBy(final User user) {
 		return issueRepo.getBooksIssuedBy(user);
+	}
+
+	public Receipt returnBooks(User user, List<Book> returnedBooks, LocalDateTime returnTime) {
+		Receipt receipt = new Receipt(user);
+		for(Book book: returnedBooks){
+			libRepo.returnBook(book);
+			Boolean isExtraBook = user.getMembership().hasExtraBook(issueRepo.getBooksIssuedBy(user).size());
+			IssueRequest issue = issueRepo.returnBook(book,user);
+			double charges = getChargesForReturn(user, returnTime, isExtraBook, issue);
+			receipt.addDetail(issue,charges);
+		}
+		return receipt;
+	}
+
+	public boolean isBookAvailable(Book book) {
+		return libRepo.canIssue(book);
 	}
 
 }
