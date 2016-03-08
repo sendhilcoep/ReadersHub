@@ -15,7 +15,8 @@ import org.junit.Test;
 
 import com.ideas.readers.exceptions.EmptyLibraryException;
 import com.ideas.readers.exceptions.MembershipException;
-
+import static org.hamcrest.CoreMatchers.*;
+import static org.junit.Assert.assertThat;
 public class ChargesTest {
 	private Book LOTR = new Book("LORD_OF_THE_RINGS",Language.ENGLISH,Category.HISTORY);
 	private Book MEWT = new Book("My Experiments With Truth", Language.HINDI, Category.COOKING);
@@ -40,7 +41,7 @@ public class ChargesTest {
 		service.issueBook(user, LOTR);
 		Receipt receipt= service.returnBook(user,LOTR,LocalDateTime.now());
 		double charges = receipt.getTotalCharge();
-		assertEquals(0,charges,0.0);
+		assertThat(charges,is(equalTo(0.0)));
 	}
 	
 	@Test
@@ -57,7 +58,7 @@ public class ChargesTest {
 		service.issueBook(user, LOTR);
 		Receipt receipt= service.returnBook(user,LOTR,LocalDateTime.now().plusDays(30));
 		double charges = receipt.getTotalCharge();
-		assertEquals(500.0,charges,0.0);
+		assertThat(charges,is(equalTo(500.0)));
 	}
 	
 	@Test
@@ -74,7 +75,7 @@ public class ChargesTest {
 		service.issueBooks(user, Arrays.asList(LOTR,ABC,MEWT,XYZ));
 		Receipt receipt= service.returnBook(user,LOTR,LocalDateTime.now().plusDays(2));
 		double charges = receipt.getTotalCharge();
-		assertEquals(50.0,charges,0.0);
+		assertThat(charges,is(equalTo(50.0)));
 	}
 	
 	@Test
@@ -90,7 +91,7 @@ public class ChargesTest {
 		final User user = new User("SomeUser", Membership.IVORY);
 		service.issueBooks(user, Arrays.asList(LOTR,ABC,MEWT,XYZ));
 		Receipt receipt = service.returnBook(user,LOTR,LocalDateTime.now().plusDays(2));
-		assertEquals(50.0,receipt.getTotalCharge(),0.0);
+		assertThat(receipt.getTotalCharge(),is(equalTo(50.0)));
 	}
 	
 	@Test
@@ -107,6 +108,6 @@ public class ChargesTest {
 		service.issueBooks(user, Arrays.asList(LOTR,ABC,MEWT,XYZ));
 		List returnedBooks = Arrays.asList(LOTR,ABC);
 		Receipt receipt = service.returnBooks(user,returnedBooks,LocalDateTime.now().plusDays(2));
-		assertEquals(50.0,receipt.getTotalCharge(),0.0);
+		assertThat(receipt.getTotalCharge(),is(equalTo(50.0)));
 	}
 }
