@@ -13,6 +13,9 @@ import org.junit.Test;
 
 import com.ideas.readers.exceptions.EmptyLibraryException;
 import com.ideas.readers.exceptions.MembershipException;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
+import static org.hamcrest.CoreMatchers.*;
 
 public class MembershipTest {
 
@@ -111,12 +114,18 @@ public class MembershipTest {
 		LibraryRepo repo = new LibraryRepo(books);
 		LibraryService service = new LibraryService(repo);
 		final User user = new User("SomeUser", Membership.PLATINUM);
+
 		service.issueBook(user, LOTR);
-		assertEquals(1, service.getBooksIssuedBy(user).size());
+		assertThat(service.getBooksIssuedBy(user), hasSize(1));
+		assertThat(service.getBooksIssuedBy(user), hasItem(LOTR));
+
 		service.issueBook(user, MEWT);
-		assertEquals(2, service.getBooksIssuedBy(user).size());
+		assertThat(service.getBooksIssuedBy(user), hasSize(2));
+		assertThat(service.getBooksIssuedBy(user), hasItems(MEWT, LOTR));
+
 		service.returnBook(user, LOTR, LocalDateTime.now().plusDays(1));
-		assertEquals(1, service.getBooksIssuedBy(user).size());
+		assertThat(service.getBooksIssuedBy(user), hasSize(1));
+		assertThat(service.getBooksIssuedBy(user), hasItem(MEWT));
 	}
 
 	@Test
@@ -134,7 +143,7 @@ public class MembershipTest {
 		final User user = new User("SomeUser", Membership.IVORY);
 		assertTrue(service.issueBooks(user, Arrays.asList(LOTR, MEWT, ABC, XYZ)));
 	}
-	
+
 	@Test
 	public void userCanCheckIfBookAvailable() throws Exception {
 		Map<Book, Integer> books = new HashMap<Book, Integer>() {
@@ -147,7 +156,7 @@ public class MembershipTest {
 		};
 		LibraryRepo repo = new LibraryRepo(books);
 		LibraryService service = new LibraryService(repo);
-assertTrue(service.isBookAvailable(LOTR));		
+		assertTrue(service.isBookAvailable(LOTR));
 	}
 
 }
